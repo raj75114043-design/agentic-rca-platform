@@ -1,0 +1,40 @@
+# GitLab CI mirror of the GitHub Actions quality pipeline
+stages: [quality, integration]
+
+default:
+  image: python:3.11-slim
+  cache:
+    key: pip
+    paths: [.cache/pip]
+  before_script:
+    - pip install -r requirements-dev.txt
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  LLM_PROVIDER: none
+
+quality:
+  stage: quality
+  variables:
+    DATABASE_URL: "sqlite:///data/ci.db"
+  script:
+    - ruff check rca tests
+    - pytest -q
+    - python -m rca.eval.run --gate
+  artifacts:
+    paths: [reports/eval.json]
+    expire_in: 30 days
+
+integration-postgres:
+  stage: integration
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+  variables:
+    POSTGRES_USER: rca
+    POSTGRES_PASSWORD: rca
+    POSTGRES_DB: rca
+    DATABASE_URL: "postgresql+psycopg://rca:rca@postgres:5432/rca"
+  script:
+    - python -m rca.cli seed
+    - python -m rca.eval.run --gate --limit 40

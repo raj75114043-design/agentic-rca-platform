@@ -1,6 +1,7 @@
 # Agentic RCA Platform
 
 [![CI](https://github.com/raj75114043-design/agentic-rca-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/raj75114043-design/agentic-rca-platform/actions/workflows/ci.yml)
+[![GitLab](https://img.shields.io/badge/GitLab-mirror-FC6D26?style=flat-square&logo=gitlab&logoColor=white)](https://gitlab.com/raj75114043/agentic-rca-platform)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://raj-agentic-rca-platform.streamlit.app)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![LangGraph](https://img.shields.io/badge/LangGraph-multi--agent-1C3C3C?style=flat-square)
