@@ -46,6 +46,13 @@ def build(settings: Settings | None = None, reseed: bool = False) -> Container:
     return Container(settings, repo, graph, ToolRegistry(repo, graph, RunbookIndex()), build_llm(settings))
 
 
-@lru_cache(maxsize=1)
-def get_container() -> Container:
+@lru_cache(maxsize=4)
+def _cached(llm_signature: tuple) -> Container:
     return build()
+
+
+def get_container() -> Container:
+    """Shared container; rebuilt when LLM configuration changes (e.g. a secret added at runtime)."""
+    import os
+    sig = tuple(os.getenv(k, "") for k in ("LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL", "LLM_API_KEY", "GROQ_API_KEY"))
+    return _cached(sig)

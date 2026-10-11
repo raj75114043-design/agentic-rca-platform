@@ -11,7 +11,7 @@ import streamlit as st  # noqa: E402
 # Streamlit Cloud secrets -> environment (e.g. GROQ_API_KEY for the free Llama tier)
 try:
     for key in ("GROQ_API_KEY", "LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL"):
-        if key in st.secrets and not os.getenv(key):
+        if key in st.secrets:
             os.environ[key] = str(st.secrets[key])
 except Exception:  # no secrets file locally
     pass
