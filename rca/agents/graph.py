@@ -39,6 +39,16 @@ RUNBOOK_QUERY = {"VENDOR_DELAY": "material delivery delay purchase order overdue
                  "HW_FAULT": "radio hardware fault batch defect replace unit"}
 
 
+def _citations(text: str) -> set[str]:
+    """Evidence IDs cited in square brackets; tolerates several IDs in one bracket and backticks."""
+    ids = set()
+    for group in re.findall(r"\[([^\[\]]+)\]", text):
+        for part in re.split(r"[,;]\s*|\s+", group.replace("`", "").strip()):
+            if re.fullmatch(r"[a-z_]+:\S+", part):
+                ids.add(part)
+    return ids
+
+
 class RCAState(TypedDict, total=False):
     run_id: str
     question: str
@@ -230,11 +240,20 @@ class RCAWorkflow:
         ctx = {"question": s["question"], "top_hypothesis": top, "alternatives": s["hypotheses"][1:3],
                "evidence": [{"id": i, "summary": e["summary"]} for i, e in evidence.items()]}
         text = self.c.llm.chat(prompts.RESPONDER_SYSTEM, json.dumps(ctx), usage=self.usage)
-        if isinstance(text, str):
-            cited = set(re.findall(r"\[([a-z_]+:[^\]\s]+)\]", text))
-            if cited and cited <= set(evidence):
+        for attempt in range(2):
+            if not isinstance(text, str):
+                break
+            cited = _citations(text)
+            bad = sorted(cited - set(evidence))
+            if cited and not bad:
                 return {"answer": text, "answer_mode": "llm", "evidence": evidence,
-                        "_summary": f"LLM report, {len(cited)} citations verified"}
+                        "_summary": f"LLM report, {len(cited)} citations verified" + (" after correction" if attempt else "")}
+            if attempt == 0:  # one corrective retry with explicit feedback
+                fix = {**ctx, "previous_report": text,
+                       "problem": (f"These citations are not evidence IDs: {bad}" if bad else "The report has no citations")
+                                  + ". Rewrite citing only IDs from the evidence list, one ID per bracket."}
+                text = self.c.llm.chat(prompts.RESPONDER_SYSTEM, json.dumps(fix), usage=self.usage)
+        if isinstance(text, str):
             return {"answer": template, "answer_mode": "template", "evidence": evidence,
                     "_summary": "LLM report rejected (unverifiable citations); template used"}
         return {"answer": template, "answer_mode": "template", "evidence": evidence, "_summary": "LLM unavailable"}
@@ -281,7 +300,8 @@ class RCAWorkflow:
                 lines.append(f"- {evidence[eid]['summary']} [{eid}]")
         lines += ["", "**Impact**", f"- {site['site_id']} ({site['city']}, {site['region']}) is {site['status']}; "
                                       f"planned on-air {site['planned_on_air']} [site:{site['site_id']}]."]
-        rbs = [e for e in evidence.values() if e["kind"] == "runbook"]
+        rbs = sorted((e for e in evidence.values() if e["kind"] == "runbook"),
+                     key=lambda e: e["data"].get("section") != "Resolution")
         if rbs:
             steps = [l.strip("- ").strip() for l in rbs[0]["data"]["text"].splitlines() if l.strip().startswith("-")]
             lines += ["", "**Recommended actions**"] + [f"- {x} [{rbs[0]['id']}]" for x in steps[:3]]

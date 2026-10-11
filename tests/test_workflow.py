@@ -79,3 +79,46 @@ def test_llm_report_with_valid_citations_is_used(container, labels):
     finally:
         container.llm = LLMClient()
     assert r["answer_mode"] == "llm" and r["llm"]["calls"] >= 2
+
+
+class ScriptedLLM(FakeLLM):
+    """Returns successive reports, to exercise the corrective retry."""
+
+    def __init__(self, reports):
+        super().__init__("")
+        self.reports = list(reports)
+
+    def chat(self, system, user, *, json_mode=False, usage=None, max_tokens=700):
+        if "Response agent" in system:
+            if usage:
+                usage.calls += 1
+            return self.reports.pop(0)
+        return super().chat(system, user, json_mode=json_mode, usage=usage, max_tokens=max_tokens)
+
+
+def test_grouped_citations_are_accepted(container, labels):
+    site = labels["VENDOR_DELAY"]["site_id"]
+    container.llm = ScriptedLLM([f"**Root cause**: site delayed [site:{site}, site:{site}]"])
+    try:
+        r = run_rca(container, f"Why is {site} delayed?", persist=False)
+    finally:
+        container.llm = LLMClient()
+    assert r["answer_mode"] == "llm"
+
+
+def test_invalid_citation_is_corrected_on_retry(container, labels):
+    site = labels["VENDOR_DELAY"]["site_id"]
+    container.llm = ScriptedLLM(["vendor late [po:PO-999999]", f"site delayed [site:{site}]"])
+    try:
+        r = run_rca(container, f"Why is {site} delayed?", persist=False)
+    finally:
+        container.llm = LLMClient()
+    assert r["answer_mode"] == "llm" and "PO-999999" not in r["answer"]
+
+
+def test_template_recommends_resolution_steps(container, labels):
+    for cause in ("HW_FAULT", "VENDOR_DELAY", "PERMIT_PENDING"):
+        if cause in labels:
+            r = run_rca(container, f"Why is {labels[cause]['site_id']} down?", persist=False)
+            section = r["answer"].split("**Recommended actions**")[-1]
+            assert "#Resolution]" in section, cause
