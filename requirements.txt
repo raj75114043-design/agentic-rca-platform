@@ -1,0 +1,14 @@
+langgraph>=0.2
+pydantic>=2.6
+sqlalchemy>=2.0
+networkx>=3.2
+rank-bm25>=0.2.2
+openai>=1.40
+fastapi>=0.110
+uvicorn[standard]>=0.29
+prometheus-client>=0.20
+streamlit>=1.40
+pandas>=2.0
+mcp>=1.2,<2
+neo4j>=5.20
+psycopg[binary]>=3.1

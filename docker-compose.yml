@@ -1,0 +1,42 @@
+# Full stack: PostgreSQL + Neo4j + API + operations console (+ optional Prometheus)
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_USER: rca, POSTGRES_PASSWORD: rca, POSTGRES_DB: rca}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U rca"], interval: 5s, retries: 10}
+
+  neo4j:
+    image: neo4j:5.20-community
+    environment: {NEO4J_AUTH: neo4j/rca-password}
+    ports: ["7474:7474"]
+    volumes: [neo4jdata:/data]
+    healthcheck: {test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"], interval: 10s, retries: 20}
+
+  seed:
+    build: .
+    env_file: .env
+    command: ["python", "-m", "rca.cli", "seed"]
+    depends_on: {postgres: {condition: service_healthy}, neo4j: {condition: service_healthy}}
+    restart: "no"
+
+  api:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on: {seed: {condition: service_completed_successfully}}
+
+  console:
+    build: .
+    env_file: .env
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports: ["8501:8501"]
+    depends_on: {seed: {condition: service_completed_successfully}}
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: ["observability"]
+    volumes: ["./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    ports: ["9090:9090"]
+
+volumes: {pgdata: {}, neo4jdata: {}}

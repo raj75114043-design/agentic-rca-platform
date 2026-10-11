@@ -159,7 +159,7 @@ class Neo4jGraph(GraphStore):  # pragma: no cover - exercised in docker-compose 
 
     def dependencies(self, site_id: str, max_hops: int = 3) -> list[dict]:
         q = (f"MATCH p=(s:Site {{id: $sid}})-[:HAS_ACTIVITY|ASSIGNED_TO|NEEDS|SUPPLIED_BY|REQUIRES|IN_REGION*1..{max_hops}]->(x) "
-             "WHERE NOT (x)-->() OR length(p) = $hops "
+             "WHERE NOT EXISTS { (x)-->() } OR length(p) = $hops "
              "RETURN [n IN nodes(p) | {label: labels(n)[0], id: n.id}] AS ns, [r IN relationships(p) | type(r)] AS rs")
         out = []
         with self.driver.session() as s:
