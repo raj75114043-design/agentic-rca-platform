@@ -81,7 +81,10 @@ class OpenAICompatibleClient(LLMClient):
                 return _parse_json(text) if json_mode else text.strip()
             except Exception as exc:  # network, rate limit, malformed JSON
                 usage.failures += 1
-                usage.events.append({"model": self.model, "ok": False, "error": type(exc).__name__})
+                usage.events.append({"model": self.model, "ok": False, "error": type(exc).__name__,
+                                     "status": getattr(exc, "status_code", None)})
+                if getattr(exc, "status_code", None) in (400, 401, 403, 404):
+                    break  # configuration error: retrying will not help
                 log.warning("llm_call_failed", extra={"attempt": attempt, "error": str(exc)[:200]})
                 time.sleep(0.5 * (2 ** attempt))
         return None

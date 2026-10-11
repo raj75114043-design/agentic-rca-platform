@@ -335,7 +335,8 @@ def run_rca(c: Container, question: str, persist: bool = True) -> dict:
               "iterations": state.get("iterations", 0), "latency_ms": latency,
               "llm": {"provider": c.llm.provider, "model": c.llm.model, "calls": wf.usage.calls,
                       "failures": wf.usage.failures, "prompt_tokens": wf.usage.prompt_tokens,
-                      "completion_tokens": wf.usage.completion_tokens}}
+                      "completion_tokens": wf.usage.completion_tokens,
+                      "errors": sorted({f"{e['error']}({e.get('status')})" for e in wf.usage.events if not e["ok"]})}}
     if persist:
         c.repo.save_run({"run_id": run_id, "created_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds"),
                          "question": question, "intent": result["intent"], "site_id": result["site_id"],

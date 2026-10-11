@@ -65,7 +65,8 @@ with tab_inv:
         left, right = st.columns([3, 2])
         with left:
             st.markdown(r["answer"])
-            st.caption(f"Run `{r['run_id']}` · report: {r['answer_mode']} · LLM calls: {r['llm']['calls']}")
+            st.caption(f"Run `{r['run_id']}` · report: {r['answer_mode']} · LLM calls: {r['llm']['calls']}"
+                       + (f" · LLM errors: {', '.join(r['llm']['errors'])}" if r["llm"].get("errors") else ""))
             for a in r["actions"]:
                 st.warning(f"**Proposed action — {a['action_type']}** (needs human approval): {a['summary']}  \n"
                            f"Approve it in the Approvals tab · `{a['action_id']}`")
