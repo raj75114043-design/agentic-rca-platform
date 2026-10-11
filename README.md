@@ -34,7 +34,7 @@ hours joining these by hand, and generic chatbots answer confidently without evi
 | Human in the loop | Escalations, batch quarantines, permit escalations and generator dispatch need explicit approval |
 | Two data stores | PostgreSQL for operational records, Neo4j for multi-hop dependencies (SQLite and NetworkX in lite mode) |
 | Tool interoperability | The same tools are exposed through an MCP server for external agents |
-| Free LLMs | Groq free tier (Llama 3.3 70B) or local Ollama; runs fully deterministic without a key |
+| Free LLMs | Groq free tier (GPT-OSS 120B) or local Ollama; runs fully deterministic without a key |
 | Production basics | API keys, request IDs, JSON logs, Prometheus metrics, persisted run traces, Docker, CI |
 | Measured quality | Labelled evaluation with a CI quality gate |
 
@@ -57,7 +57,7 @@ flowchart LR
     T --> DB[(PostgreSQL)]
     T --> G[(Neo4j)]
     T --> RB[Runbooks · BM25]
-    P -.-> L[Groq Llama / Ollama]
+    P -.-> L[Groq GPT-OSS / Ollama]
     W -.-> L
 ```
 
@@ -129,7 +129,7 @@ docker compose --profile observability up -d prometheus   # metrics :9090
 
 | Option | Setup |
 |---|---|
-| Groq free tier | Create a key at console.groq.com, set `GROQ_API_KEY` (model `llama-3.3-70b-versatile`) |
+| Groq free tier | Create a key at console.groq.com, set `GROQ_API_KEY` (model `openai/gpt-oss-120b`) |
 | Ollama (local) | `ollama pull llama3.1:8b`, set `LLM_PROVIDER=ollama` |
 | None | Default without a key — deterministic planning and templated reports |
 

@@ -8,7 +8,7 @@ os.chdir(Path(__file__).resolve().parent)
 
 import streamlit as st  # noqa: E402
 
-# Streamlit Cloud secrets -> environment (e.g. GROQ_API_KEY for the free Llama tier)
+# Streamlit Cloud secrets -> environment (e.g. GROQ_API_KEY for the free Groq tier)
 try:
     for key in ("GROQ_API_KEY", "LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL"):
         if key in st.secrets:
@@ -45,7 +45,7 @@ with st.sidebar:
         if st.button(q, width="stretch"):
             st.session_state["q"] = q
     st.divider()
-    st.caption("Synthetic data. Set `GROQ_API_KEY` to enable the free Llama 3.3 model for planning and reports.")
+    st.caption("Synthetic data. Set `GROQ_API_KEY` to enable the free open-weight GPT-OSS model for planning and reports.")
 
 tab_inv, tab_ops, tab_appr, tab_eval, tab_arch = st.tabs(
     ["🔎 Investigate", "📊 Operations", "✅ Approvals", "🧪 Evaluation", "🏗️ Architecture"])
@@ -167,6 +167,6 @@ with tab_arch:
         AN [label="Analyst\\n(hypothesis ranking)"]; V [label="Verifier"]; RS [label="Responder\\n(cited report)"]; AC [label="Actions\\n(HITL)"];
         R -> P -> X -> AN -> V; V -> P [label="need evidence"]; V -> RS -> AC; }
       T [label="Tool registry\\n(Pydantic validation, audit)"]; MCP [label="MCP server"];
-      DB [label="PostgreSQL / SQLite"]; G [label="Neo4j / NetworkX"]; RB [label="Runbooks (BM25)"]; LLM [label="Groq Llama / Ollama"];
+      DB [label="PostgreSQL / SQLite"]; G [label="Neo4j / NetworkX"]; RB [label="Runbooks (BM25)"]; LLM [label="Groq GPT-OSS / Ollama"];
       UI -> R; API -> R; X -> T; MCP -> T; T -> DB; T -> G; T -> RB; P -> LLM; RS -> LLM; }""")
     st.markdown("Source code, ADRs and runbook: see the GitHub repository README.")

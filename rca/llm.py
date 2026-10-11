@@ -22,7 +22,7 @@ from rca.config import Settings
 log = logging.getLogger("rca.llm")
 
 DEFAULTS = {
-    "groq": ("https://api.groq.com/openai/v1", "llama-3.3-70b-versatile"),
+    "groq": ("https://api.groq.com/openai/v1", "openai/gpt-oss-120b"),  # open-weight; Llama 3.3 70B retired Aug 2026
     "ollama": ("http://localhost:11434/v1", "llama3.1:8b"),
     "openai_compatible": ("", ""),
 }
@@ -63,7 +63,10 @@ class OpenAICompatibleClient(LLMClient):
 
     def chat(self, system, user, *, json_mode=False, usage=None, max_tokens=700):
         usage = usage or LLMUsage()
-        kwargs = {"response_format": {"type": "json_object"}} if json_mode else {}
+        kwargs: dict = {"response_format": {"type": "json_object"}} if json_mode else {}
+        if "gpt-oss" in self.model:  # reasoning model: keep reasoning short and leave room for the answer
+            kwargs["extra_body"] = {"reasoning_effort": "low"}
+            max_tokens += 1024
         for attempt in range(3):
             t0 = time.perf_counter()
             try:

@@ -3,7 +3,7 @@
 **Status:** Accepted
 
 ## Context
-Free, open-weight models (Groq Llama 3.3, Ollama) are capable planners and writers but can invent identifiers,
+Free, open-weight models (Groq GPT-OSS 120B, Ollama) are capable planners and writers but can invent identifiers,
 dates and vendors. Operations decisions must be traceable to records.
 
 ## Decision
