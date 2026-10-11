@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 REGIONS = ["North", "South", "East", "West", "Central"]
 CITIES = {

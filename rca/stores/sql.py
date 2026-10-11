@@ -6,11 +6,10 @@ seeding, run tracing and human-in-the-loop actions.
 from __future__ import annotations
 
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
-from sqlalchemy import (Column, Integer, MetaData, String, Table, Text, create_engine, func, insert, select,
-                        update)
+from sqlalchemy import Column, Integer, MetaData, String, Table, Text, create_engine, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from rca.data.generator import TODAY, World
@@ -226,7 +225,7 @@ class OpsRepository:
             res = conn.execute(update(actions).where(actions.c.action_id == action_id)
                                .where(actions.c.status == "PENDING_APPROVAL")
                                .values(status="APPROVED" if approve else "REJECTED", decided_by=user,
-                                       decided_at=datetime.utcnow().isoformat(timespec="seconds")))
+                                       decided_at=datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds")))
             if res.rowcount == 0:
                 return None
         return self._q(select(actions).where(actions.c.action_id == action_id))[0]

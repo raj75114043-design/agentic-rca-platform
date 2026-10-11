@@ -20,7 +20,7 @@ import re
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
@@ -171,7 +171,7 @@ class RCAWorkflow:
             outs = list(pool.map(lambda st: self.c.tools.call(st["tool"], st.get("args", {})), plan))
         results, evidence = dict(s.get("results", {})), dict(s.get("evidence", {}))
         log = list(s.get("tool_log", []))
-        for st, out in zip(plan, outs):
+        for st, out in zip(plan, outs, strict=True):
             log.append({k: out.get(k) for k in ("tool", "args", "ok", "error", "ms")} | {"why": st.get("why", "")})
             if out["ok"]:
                 if st["tool"] == "list_sites" and "list_sites" in results:
@@ -260,7 +260,7 @@ class RCAWorkflow:
         if not act:
             return {"actions": [], "_summary": "no action proposed"}
         action = {"action_id": f"ACT-{uuid.uuid4().hex[:8].upper()}", "run_id": s["run_id"],
-                  "created_at": datetime.utcnow().isoformat(timespec="seconds"), "action_type": act[0],
+                  "created_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds"), "action_type": act[0],
                   "target": act[1], "summary": act[2], "status": "PENDING_APPROVAL", "decided_by": None, "decided_at": None}
         self.c.repo.create_action(action)
         return {"actions": [action], "_summary": f"{act[0]} awaiting human approval"}
@@ -325,6 +325,8 @@ def run_rca(c: Container, question: str, persist: bool = True) -> dict:
                             config={"recursion_limit": 30})
     latency = round((time.perf_counter() - t0) * 1000)
     top = (state.get("hypotheses") or [None])[0]
+    if top and top["confidence"] == "LOW":  # weak signals are shown as hypotheses but not reported as the root cause
+        top = None
     result = {"run_id": run_id, "question": question, "intent": state["intent"], "site_id": state.get("site_id"),
               "answer": state["answer"], "answer_mode": state.get("answer_mode"), "hypotheses": state.get("hypotheses", []),
               "root_cause": top["cause"] if top else None, "key_entity": top["key_entity"] if top else None,
@@ -335,7 +337,7 @@ def run_rca(c: Container, question: str, persist: bool = True) -> dict:
                       "failures": wf.usage.failures, "prompt_tokens": wf.usage.prompt_tokens,
                       "completion_tokens": wf.usage.completion_tokens}}
     if persist:
-        c.repo.save_run({"run_id": run_id, "created_at": datetime.utcnow().isoformat(timespec="seconds"),
+        c.repo.save_run({"run_id": run_id, "created_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds"),
                          "question": question, "intent": result["intent"], "site_id": result["site_id"],
                          "root_cause": result["root_cause"], "confidence": result["confidence"],
                          "llm_provider": c.llm.provider, "latency_ms": latency, "answer": result["answer"],

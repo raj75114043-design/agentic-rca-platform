@@ -113,7 +113,7 @@ class NetworkXGraph(GraphStore):
 
         walk(start, [self._hop(start, None)], 0)
         # Incidents point *to* the site, so add them as reverse one-hop paths
-        for src, _, data in self.g.in_edges(start, data=True):
+        for src, _ in self.g.in_edges(start):
             paths.append([self._hop(start, None), self._hop(src, "AFFECTED_BY")])
         return [{"hops": p} for p in paths]
 

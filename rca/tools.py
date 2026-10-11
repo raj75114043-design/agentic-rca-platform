@@ -7,8 +7,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -110,7 +111,7 @@ class ToolRegistry:
         except ToolError as exc:
             data, evidence, ok, err = None, [], False, str(exc)
         ms = round((time.perf_counter() - t0) * 1000, 1)
-        log.info("tool_call", extra={"tool": name, "args": parsed.model_dump(), "ok": ok, "ms": ms})
+        log.info("tool_call", extra={"tool": name, "tool_args": parsed.model_dump(), "ok": ok, "ms": ms})
         return {"tool": name, "args": parsed.model_dump(), "ok": ok, "error": err, "data": data,
                 "evidence": evidence, "ms": ms}
 
