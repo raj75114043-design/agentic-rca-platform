@@ -134,7 +134,7 @@ def generate(n_sites: int = 240, seed: int = 7, fault_rate: float = 0.35) -> Wor
                 w.purchase_orders.append({"po_id": f"PO-{po_n:06d}", "activity_id": a["activity_id"],
                                           "material_id": mid, "vendor_id": vendor["vendor_id"], "quantity": rng.randint(1, 6),
                                           "promised_date": _d(promised),
-                                          "delivered_date": _d(promised + timedelta(days=rng.randint(-3, 2))),
+                                          "delivered_date": _d(promised + timedelta(days=rng.choice([-6, -5, -4, -3, -2, -1, 0, 0, 0, 1, 2, 4]))),
                                           "batch_id": f"B{rng.randint(1000, 9999)}"})
 
         # Background noise incidents on healthy sites (resolved, minor) so evidence is not trivially clean
